@@ -16,7 +16,7 @@ import {
   Output,
   Self,
   ViewChild,
-  booleanAttribute,
+  booleanAttribute, inject,
 } from '@angular/core'
 import {
   FormControl,
@@ -28,8 +28,9 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms'
 import {
+  _ErrorStateTracker,
   ErrorStateMatcher,
-  MatRippleModule
+  MatRippleModule,
 } from '@angular/material/core'
 import { MatDividerModule } from '@angular/material/divider'
 import { MatFormFieldControl } from '@angular/material/form-field'
@@ -172,6 +173,8 @@ export class NgxMatInputTelComponent
 
   private errorState?: boolean
 
+  private _errorStateTracker: _ErrorStateTracker;
+
   constructor(
     private _changeDetectorRef: ChangeDetectorRef,
     private countryCodeData: CountryCode,
@@ -182,7 +185,7 @@ export class NgxMatInputTelComponent
     @Optional() _parentFormGroup: FormGroupDirective,
     _defaultErrorStateMatcher: ErrorStateMatcher,
   ) {
-    super(_defaultErrorStateMatcher, _parentForm, _parentFormGroup, _ngControl)
+    super(_defaultErrorStateMatcher, _parentForm, _parentFormGroup, _ngControl);
 
     _focusMonitor.monitor(_elementRef, true).subscribe((origin: any) => {
       if (this.focused && !origin) {
@@ -195,6 +198,14 @@ export class NgxMatInputTelComponent
     if (this.ngControl != null) {
       this.ngControl.valueAccessor = this
     }
+
+    this._errorStateTracker = new _ErrorStateTracker(
+      _defaultErrorStateMatcher,
+      this.ngControl,
+      _parentFormGroup,
+      _parentForm,
+      this.stateChanges,
+    );
   }
 
   ngOnInit() {
@@ -220,16 +231,11 @@ export class NgxMatInputTelComponent
 
     this._changeDetectorRef.markForCheck()
     this.stateChanges.next()
+
   }
 
   updateErrorState() {
-    if (this.ngControl && this.ngControl.invalid && (this.ngControl.touched || (this._parentForm && this._parentForm.submitted))) {
-      const currentState = this.errorStateMatcher.isErrorState(this.ngControl.control as FormControl, this.ngControl?.value);
-      if (currentState !== this.errorState) {
-        this.errorState = currentState;
-        this._changeDetectorRef.markForCheck();
-      }
-    }
+    this._errorStateTracker.updateErrorState();
   }
 
   private _setDefaultCountry() {
@@ -258,6 +264,10 @@ export class NgxMatInputTelComponent
         this.errorState = newState
         this.stateChanges.next()
       }
+
+
+      console.log(this.errorState)
+      this.updateErrorState();
     }
   }
 
