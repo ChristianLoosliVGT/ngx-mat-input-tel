@@ -265,8 +265,6 @@ export class NgxMatInputTelComponent
         this.stateChanges.next()
       }
 
-
-      console.log(this.errorState)
       this.updateErrorState();
     }
   }
